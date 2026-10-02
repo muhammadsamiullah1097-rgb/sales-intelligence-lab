@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sales Intelligence Lab — Real Retail Data Explorer</title>
+<meta name="description" content="Explore real retail transaction data. Customer lookup and owner dashboard with plain-language insights.">
+<style>
+  :root{
+    --bg:#f1f5f9; --card:#ffffff; --ink:#0f172a; --muted:#475569;
+    --brand:#1d4ed8; --brand-dark:#1e3a8a; --accent:#059669; --warn:#b45309; --danger:#dc2626;
+    --line:#e2e8f0; --radius:14px;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);line-height:1.55;font-size:17px}
+  header.top{background:linear-gradient(135deg,#1e3a8a,#1d4ed8);color:#fff;padding:1.2rem 1rem;text-align:center}
+  header.top h1{margin:0;font-size:1.6rem}
+  header.top p{margin:.4rem 0 0;opacity:.92;font-size:1rem}
+  .snapshot{display:inline-block;margin-top:.6rem;background:#fef9c3;color:#713f12;font-weight:700;font-size:.85rem;padding:.35rem .9rem;border-radius:999px}
+  .tabs{display:flex;gap:.6rem;justify-content:center;padding:1rem .8rem 0;flex-wrap:wrap}
+  .tabs button{flex:1 1 200px;max-width:320px;font-size:1.15rem;font-weight:700;padding:.9rem 1rem;border:2px solid var(--brand);border-radius:var(--radius);background:#fff;color:var(--brand);cursor:pointer;min-height:56px}
+  .tabs button[aria-selected="true"]{background:var(--brand);color:#fff}
+  main{max-width:1080px;margin:0 auto;padding:1rem .8rem 3rem}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:1.1rem;margin:.9rem 0;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+  .card h2{margin:.1rem 0 .7rem;font-size:1.25rem}
+  .card h3{margin:1rem 0 .5rem;font-size:1.05rem}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:.7rem}
+  .kpi{background:#eff6ff;border:1px solid #bfdbfe;border-radius:12px;padding:.9rem;text-align:center}
+  .kpi .v{font-size:1.45rem;font-weight:800;color:var(--brand-dark)}
+  .kpi .l{font-size:.9rem;color:var(--muted)}
+  .filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:.7rem;align-items:end}
+  label{font-weight:600;font-size:.95rem;display:block;margin-bottom:.25rem}
+  input,select,button{font-size:1rem}
+  input[type="text"],input[type="number"],input[type="date"],select{width:100%;padding:.7rem;border:2px solid var(--line);border-radius:10px;background:#fff;min-height:48px}
+  input:focus,select:focus,button:focus{outline:3px solid #93c5fd;outline-offset:1px}
+  .btn{background:var(--brand);color:#fff;border:none;border-radius:10px;padding:.8rem 1.2rem;font-weight:700;cursor:pointer;min-height:52px}
+  .btn:hover{background:var(--brand-dark)}
+  .btn.secondary{background:#fff;color:var(--brand);border:2px solid var(--brand)}
+  .btn.ghost{background:#e2e8f0;color:var(--ink)}
+  .btnrow{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:.8rem}
+  .btnrow .btn{flex:1 1 160px}
+  .chart-wrap{position:relative;width:100%;overflow-x:auto}
+  canvas{max-width:100%}
+  .rec{background:#f0fdf4;border:1px solid #86efac;border-radius:12px;padding:.9rem;margin:.6rem 0}
+  .rec strong{color:#14532d}
+  .rec .why{font-size:.92rem;color:var(--muted)}
+  .lookup-row{display:flex;gap:.6rem;flex-wrap:wrap}
+  .lookup-row input{flex:1 1 200px}
+  .summary{background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:1rem;font-size:1.05rem}
+  table{width:100%;border-collapse:collapse;font-size:.95rem}
+  th,td{text-align:left;padding:.55rem .4rem;border-bottom:1px solid var(--line)}
+  th{background:#f8fafc;position:sticky;top:0}
+  .table-scroll{max-height:380px;overflow:auto;border:1px solid var(--line);border-radius:10px}
+  .muted{color:var(--muted);font-size:.92rem}
+  .badge{display:inline-block;background:#dbeafe;color:#1e3a8a;font-weight:700;border-radius:999px;padding:.15rem .7rem;font-size:.85rem;margin:.15rem .2rem}
+  .notice{background:#fff7ed;border:1px solid #fed7aa;color:#7c2d12;border-radius:12px;padding:.9rem;margin:.6rem 0}
+  footer{background:#0f172a;color:#cbd5e1;padding:1.5rem 1rem;font-size:.9rem}
+  footer a{color:#93c5fd}
+  footer .wrap{max-width:1080px;margin:0 auto}
+  .hidden{display:none!important}
+  @media (max-width:560px){
+    body{font-size:16px}
+    header.top h1{font-size:1.3rem}
+    .kpi .v{font-size:1.2rem}
+    .btnrow .btn{flex:1 1 100%}
+    main{padding:1rem .5rem 3rem}
+  }
+</style>
+</head>
+<body>
+<header class="top">
+  <h1>🛒 Sales Intelligence Lab</h1>
+  <p>Real retail sales, explained in plain words — for customers <em>and</em> shop owners.</p>
+  <span class="snapshot">📸 data snapshot — not live</span>
+</header>
+
+<nav class="tabs" role="tablist" aria-label="Views">
+  <button role="tab" id="tab-customer" aria-selected="true" aria-controls="view-customer" onclick="showTab('customer')">👤 I am a Customer</button>
+  <button role="tab" id="tab-owner" aria-selected="false" aria-controls="view-owner" onclick="showTab('owner')">🏪 I am the Owner / Manager</button>
+</nav>
+
+<main>
+  <!-- ================= CUSTOMER VIEW ================= -->
+  <section id="view-customer" role="tabpanel" aria-labelledby="tab-customer">
+    <div class="card">
+      <h2>👤 Customer Lookup</h2>
+      <p class="muted">Type a customer ID (a number, e.g. 17850) and see that customer's full story — orders, money spent, favourite products — in simple words.</p>
+      <div class="lookup-row">
+        <input type="number" id="cust-input" placeholder="Enter customer ID, e.g. 17850" aria-label="Customer ID">
+        <button class="btn" onclick="lookupCustomer()">Look me up</button>
+      </div>
+      <div class="btnrow" id="example-customers" aria-label="Try an example customer"></div>
+      <div id="cust-result" style="margin-top:1rem"></div>
+    </div>
+  </section>
+
+  <!-- ================= OWNER VIEW ================= -->
+  <section id="view-owner" role="tabpanel" aria-labelledby="tab-owner" class="hidden">
+    <div class="card">
+      <h2>🏪 Owner Dashboard</h2>
+      <p class="muted">Everything below comes from the real transaction records. Use the filters, then scroll for charts and advice.</p>
+      <div class="filters">
+        <div>
+          <label for="f-from">From date</label>
+          <input type="date" id="f-from" min="2010-12-01" max="2011-12-09" value="2010-12-01">
+        </div>
+        <div>
+          <label for="f-to">To date</label>
+          <input type="date" id="f-to" min="2010-12-01" max="2011-12-09" value="2011-12-09">
+        </div>
+        <div>
+          <label for="f-country">Country</label>
+          <select id="f-country"><option value="ALL">All countries</option></select>
+        </div>
+        <div>
+          <button class="btn" onclick="applyFilters()">Apply filters</button>
+        </div>
+      </div>
+      <div class="btnrow">
+        <button class="btn secondary" onclick="exportCSV()">⬇️ Download filtered transactions (CSV)</button>
+        <button class="btn ghost" onclick="resetFilters()">Reset filters</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Key numbers <span class="muted" id="kpi-range"></span></h2>
+      <div class="kpis">
+        <div class="kpi"><div class="v" id="k-revenue">–</div><div class="l">Total revenue (£)</div></div>
+        <div class="kpi"><div class="v" id="k-orders">–</div><div class="l">Orders</div></div>
+        <div class="kpi"><div class="v" id="k-aov">–</div><div class="l">Average order value (£)</div></div>
+        <div class="kpi"><div class="v" id="k-cancel">–</div><div class="l">Cancelled lines (%)</div></div>
+      </div>
+      <p class="muted" id="cancel-note"></p>
+    </div>
+
+    <div class="card">
+      <h2>📈 Monthly revenue</h2>
+      <div class="chart-wrap"><canvas id="ch-monthly" height="260" aria-label="Monthly revenue bar chart"></canvas></div>
+      <p class="notice hidden" id="chart-fallback">📶 Charts need an internet connection to load the chart library. All numbers above and below are still calculated from the real data.</p>
+    </div>
+
+    <div class="card">
+      <h2>🔍 Find a product</h2>
+      <div class="lookup-row">
+        <input type="text" id="prod-search" placeholder="Type part of a product name, e.g. 'bag'" aria-label="Product search">
+        <button class="btn" onclick="searchProducts()">Search</button>
+      </div>
+      <div id="prod-result" class="table-scroll" style="margin-top:.8rem"></div>
+    </div>
+
+    <div class="card">
+      <h2>🏆 Top 10 products by revenue</h2>
+      <div class="chart-wrap"><canvas id="ch-products" height="300" aria-label="Top products bar chart"></canvas></div>
+    </div>
+
+    <div class="card">
+      <h2>🌍 Revenue by country</h2>
+      <div class="chart-wrap"><canvas id="ch-countries" height="280" aria-label="Revenue by country bar chart"></canvas></div>
+    </div>
+
+    <div class="card">
+      <h2>↩️ Cancellations &amp; returns</h2>
+      <p class="muted">Lines with a negative quantity are cancelled or returned items. Here is what the data really shows:</p>
+      <div id="cancel-detail"></div>
+    </div>
+
+    <div class="card">
+      <h2>💡 Recommendations — computed from the data</h2>
+      <p class="muted">These are not generic tips. Each one is calculated from the numbers you see above, using the filters you set.</p>
+      <div id="recommendations"></div>
+    </div>
+
+    <div class="card">
+      <h2>📄 Data source (honest card)</h2>
+      <table>
+        <tr><th>Field</th><th>Value</th></tr>
+        <tr><td>Dataset</td><td><strong>Online Retail</strong> — real transactions from a real UK-based online retailer</td></tr>
+        <tr><td>Source</td><td>UCI Machine Learning Repository<br><a href="https://archive.ics.uci.edu/dataset/352/online+retail" target="_blank" rel="noopener">archive.ics.uci.edu/dataset/352/online+retail</a></td></tr>
+        <tr><td>License</td><td>CC BY 4.0</td></tr>
+        <tr><td>Period covered</td><td>1 Dec 2010 – 9 Dec 2011</td></tr>
+        <tr><td>Full file</td><td>541,909 rows (Excel, ~45 MB)</td></tr>
+        <tr><td>This site's sample</td><td><strong>40,000 rows</strong> — deterministic random sample (<code>pandas.sample(n=40000, random_state=42)</code>) from the 406,829 rows that had a customer ID; covers the full period, 3,791 customers, 37 countries</td></tr>
+        <tr><td>Downloaded</td><td>2026-10-02</td></tr>
+        <tr><td>Status</td><td><span class="snapshot">📸 data snapshot — not live</span></td></tr>
+      </table>
+      <p class="muted">Rows with missing customer IDs (guest checkouts) were excluded so customer lookups always work. Negative quantities = cancelled/returned lines, kept in the data on purpose. Money is in British pounds (£).</p>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <strong>Sales Intelligence Lab</strong> — a portfolio demo built with real data.<br>
+    Data: UCI Machine Learning Repository, “Online Retail” (CC BY 4.0). Snapshot, not a live feed.<br>
+    Built by Muhammad Sami Ullah · <a href="https://github.com/muhammadsamiullah1097-rgb" target="_blank" rel="noopener">GitHub</a>
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script src="data/data.js"></script>
+<script>
+/* ===== Parse data ===== */
+const rows = SALES_DATA.map(function(r){
+  var t = r[5]*r[6];
+  return { inv:r[0], d:r[1], ts:Date.parse(r[1]), cid:r[2], code:r[3], desc:r[4],
+           qty:r[5], price:r[6], country:r[7], total:Math.round(t*100)/100, month:r[1].slice(0,7) };
+});
+function fmt(n){ return n.toLocaleString('en-GB',{maximumFractionDigits:2,minimumFractionDigits:2}); }
+function fmt0(n){ return n.toLocaleString('en-GB'); }
+
+/* ===== Tabs ===== */
+function showTab(which){
+  var c = which==='customer';
+  document.getElementById('view-customer').classList.toggle('hidden',!c);
+  document.getElementById('view-owner').classList.toggle('hidden',c);
+  document.getElementById('tab-customer').setAttribute('aria-selected',c);
+  document.getElementById('tab-owner').setAttribute('aria-selected',!c);
+  if(!c) renderOwner();
+}
+
+/* ===== Filters ===== */
+function currentFilters(){
+  var from = document.getElementById('f-from').value;
+  var to = document.getElementById('f-to').value;
+  var ctry = document.getElementById('f-country').value;
+  return {
+    fromTs: from ? Date.parse(from+'T00:00') : 0,
+    toTs:   to   ? Date.parse(to+'T23:59')   : Infinity,
+    country: ctry
+  };
+}
+function filteredRows(){
+  var f = currentFilters();
+  return rows.filter(function(r){
+    return r.ts>=f.fromTs && r.ts<=f.toTs && (f.country==='ALL' || r.country===f.country);
+  });
+}
+function applyFilters(){ renderOwner(); }
+function resetFilters(){
+  document.getElementById('f-from').value='2010-12-01';
+  document.getElementById('f-to').value='2011-12-09';
+  document.getElementById('f-country').value='ALL';
+  document.getElementById('prod-search').value='';
+  document.getElementById('prod-result').innerHTML='';
+  renderOwner();
+}
+
+/* ===== CSV export ===== */
+function exportCSV(){
+  var fr = filteredRows();
+  var head = 'InvoiceNo,Date,CustomerID,StockCode,Description,Quantity,UnitPrice,LineTotal_GBP,Country';
+  var lines = fr.map(function(r){
+    var desc = '"'+r.desc.replace(/"/g,'""')+'"';
+    return [r.inv,r.d,r.cid,r.code,desc,r.qty,r.price,r.total,r.country].join(',');
+  });
+  var blob = new Blob([head+'\n'+lines.join('\n')],{type:'text/csv'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'sales_transactions_filtered.csv';
+  document.body.appendChild(a); a.click(); a.remove();
+}
+
+/* ===== Charts ===== */
+var charts = {};
+function drawChart(id, cfg){
+  if(!window.Chart){
+    document.getElementById('chart-fallback').classList.remove('hidden');
+    return;
+  }
+  if(charts[id]) charts[id].destroy();
+  charts[id] = new Chart(document.getElementById(id), cfg);
+}
+</script>
+<script>
+/* ===== Owner view ===== */
+var MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+var DAYS = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+
+function monthLabel(ym){
+  var y = ym.slice(0,4), m = parseInt(ym.slice(5,7),10);
+  return MONTHS[m-1]+" "+y;
+}
+
+function renderOwner(){
+  /* country select */
+  var sel = document.getElementById('f-country');
+  if(sel.options.length<=1){
+    var countries = {};
+    rows.forEach(function(r){ countries[r.country]=1; });
+    Object.keys(countries).sort().forEach(function(c){
+      var o=document.createElement('option'); o.value=c; o.textContent=c; sel.appendChild(o);
+    });
+  }
+  var fr = filteredRows();
+  var f = currentFilters();
+  document.getElementById('kpi-range').textContent =
+    "("+fmt0(fr.length)+" order lines, "+(f.country==='ALL'?'all countries':f.country)+")";
+
+  var revenue=0, orders={}, cancels=0;
+  fr.forEach(function(r){ revenue+=r.total; orders[r.inv]=1; if(r.qty<0) cancels++; });
+  var nOrders = Object.keys(orders).length;
+  document.getElementById('k-revenue').textContent = "£"+fmt0(Math.round(revenue));
+  document.getElementById('k-orders').textContent = fmt0(nOrders);
+  document.getElementById('k-aov').textContent = "£"+fmt(nOrders? revenue/nOrders : 0);
+  var cancelPct = fr.length? (100*cancels/fr.length):0;
+  document.getElementById('k-cancel').textContent = cancelPct.toFixed(1)+"%";
+  document.getElementById('cancel-note').textContent =
+    fmt0(cancels)+" of "+fmt0(fr.length)+" order lines were cancellations or returns (negative quantity). They are kept in the numbers on purpose — refunds cost real money.";
+
+  /* monthly revenue */
+  var byMonth = {};
+  fr.forEach(function(r){ byMonth[r.month]=(byMonth[r.month]||0)+r.total; });
+  var months = Object.keys(byMonth).sort();
+  drawChart('ch-monthly',{
+    type:'bar',
+    data:{ labels:months.map(monthLabel),
+      datasets:[{label:'Revenue (£)',data:months.map(function(m){return Math.round(byMonth[m]);}),
+        backgroundColor:'#1d4ed8',borderRadius:6}] },
+    options:{responsive:true,plugins:{legend:{display:false}},
+      scales:{y:{beginAtZero:true,title:{display:true,text:'£'}}}}
+  });
+
+  /* top products */
+  var byProd = {};
+  fr.forEach(function(r){
+    if(!byProd[r.code]) byProd[r.code]={desc:r.desc,rev:0,qty:0};
+    byProd[r.code].rev+=r.total; byProd[r.code].qty+=r.qty;
+  });
+  var topP = Object.keys(byProd).map(function(k){return {code:k,desc:byProd[k].desc,rev:byProd[k].rev};})
+    .sort(function(a,b){return b.rev-a.rev;}).slice(0,10);
+  drawChart('ch-products',{
+    type:'bar',
+    data:{ labels:topP.map(function(p){return p.desc.length>28?p.desc.slice(0,27)+"…":p.desc;}),
+      datasets:[{label:'Revenue (£)',data:topP.map(function(p){return Math.round(p.rev);}),
+        backgroundColor:'#059669',borderRadius:6}] },
+    options:{indexAxis:'y',responsive:true,plugins:{legend:{display:false}},
+      scales:{x:{beginAtZero:true,title:{display:true,text:'£'}}}}
+  });
+
+  /* countries */
+  var byCountry = {};
+  fr.forEach(function(r){ byCountry[r.country]=(byCountry[r.country]||0)+r.total; });
+  var topC = Object.keys(byCountry).map(function(k){return {c:k,rev:byCountry[k]};})
+    .sort(function(a,b){return b.rev-a.rev;}).slice(0,10);
+  drawChart('ch-countries',{
+    type:'bar',
+    data:{ labels:topC.map(function(p){return p.c;}),
+      datasets:[{label:'Revenue (£)',data:topC.map(function(p){return Math.round(p.rev);}),
+        backgroundColor:'#b45309',borderRadius:6}] },
+    options:{responsive:true,plugins:{legend:{display:false}},
+      scales:{y:{beginAtZero:true,title:{display:true,text:'£'}}}}
+  });
+
+  renderCancellations(fr);
+  renderRecommendations(fr, months, byMonth, byProd, topC);
+}
+
+function renderCancellations(fr){
+  var neg = fr.filter(function(r){return r.qty<0;});
+  var byP = {};
+  neg.forEach(function(r){
+    if(!byP[r.code]) byP[r.code]={desc:r.desc,n:0};
+    byP[r.code].n++;
+  });
+  var top = Object.keys(byP).map(function(k){return {desc:byP[k].desc,n:byP[k].n};})
+    .sort(function(a,b){return b.n-a.n;}).slice(0,5);
+  var html = "<p><strong>"+fmt0(neg.length)+"</strong> cancelled/returned lines in the current selection.</p>";
+  if(top.length){
+    html += "<p>Most cancelled products:</p><ul>";
+    top.forEach(function(p){ html += "<li><strong>"+escapeHtml(p.desc)+"</strong> — "+p.n+" cancelled lines</li>"; });
+    html += "</ul>";
+  } else html += "<p class='muted'>No cancellations in this selection. 🎉</p>";
+  document.getElementById('cancel-detail').innerHTML = html;
+}
+
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); }
+</script>
+<script>
+/* ===== Recommendations — every number computed from the data ===== */
+function renderRecommendations(fr, months, byMonth, byProd, topC){
+  var out = [];
+  /* 1. Best vs slowest month */
+  if(months.length>=2){
+    var best=months[0], worst=months[0];
+    months.forEach(function(m){ if(byMonth[m]>byMonth[best])best=m; if(byMonth[m]<byMonth[worst])worst=m; });
+    var ratio = byMonth[worst]? byMonth[best]/byMonth[worst] : 0;
+    out.push({ t:"📦 Stock up before "+monthLabel(best)+".",
+      d:"Revenue in "+monthLabel(best)+" (£"+fmt0(Math.round(byMonth[best]))+") was "+ratio.toFixed(1)+"× the slowest month, "+monthLabel(worst)+" (£"+fmt0(Math.round(byMonth[worst]))+"). Order popular gift items 4–6 weeks earlier.",
+      w:"Calculated from monthly revenue totals in the current selection." });
+  }
+  /* 2. Product with the highest return rate (min 20 lines) */
+  var stats={};
+  fr.forEach(function(r){
+    if(!stats[r.code]) stats[r.code]={desc:r.desc,n:0,neg:0};
+    stats[r.code].n++; if(r.qty<0) stats[r.code].neg++;
+  });
+  var ret = Object.keys(stats).map(function(k){return {desc:stats[k].desc,n:stats[k].n,neg:stats[k].neg,
+      rate:stats[k].n? 100*stats[k].neg/stats[k].n:0};})
+    .filter(function(p){return p.n>=20 && p.neg>0;})
+    .sort(function(a,b){return b.rate-a.rate;})[0];
+  if(ret){
+    out.push({ t:"📸 \""+ret.desc+"\" has the highest return rate: "+ret.rate.toFixed(1)+"%.",
+      d:"Out of "+ret.n+" order lines, "+ret.neg+" were cancelled or returned. Action: check the product photos, description and size details for this item — returns usually mean the item didn't match expectations.",
+      w:"Calculated from return rate = cancelled lines ÷ total lines per product (products with ≥20 lines)." });
+  }
+  /* 3. Fastest-growing country (first half vs second half of selected period) */
+  var f = currentFilters();
+  var mid = (f.fromTs+f.toTs)/2;
+  var h1={}, h2={};
+  fr.forEach(function(r){ if(r.ts<mid) h1[r.country]=(h1[r.country]||0)+1; else h2[r.country]=(h2[r.country]||0)+1; });
+  var growth = Object.keys(h2).map(function(c){
+      return {c:c,a:h1[c]||0,b:h2[c],g:(h1[c]||0)? (h2[c]-(h1[c]||0))/(h1[c]||0) : (h2[c]>0? 9.99 : 0)};
+    }).filter(function(g){return g.a>=10 && g.b>g.a;})
+    .sort(function(a,b){return b.g-a.g;})[0];
+  if(growth){
+    out.push({ t:"🌍 Orders from "+growth.c+" are growing fastest: +"+Math.round(growth.g*100)+"%.",
+      d:"Order lines rose from "+growth.a+" (first half of the period) to "+growth.b+" (second half). Action: consider that country's language in marketing and keep stock for its favourite items.",
+      w:"Calculated by comparing order-line counts between the first and second half of the selected period (countries with ≥10 lines in the first half)." });
+  }
+  /* 4. Best sales weekday */
+  var byDay=[0,0,0,0,0,0,0];
+  fr.forEach(function(r){ byDay[new Date(r.ts).getDay()]++; });
+  var bi=0; byDay.forEach(function(v,i){ if(v>byDay[bi]) bi=i; });
+  var tot=byDay.reduce(function(a,b){return a+b;},0);
+  out.push({ t:"📅 "+DAYS[bi]+" is the busiest order day.",
+    d:DAYS[bi]+"s brought "+fmt0(byDay[bi])+" order lines ("+(tot?Math.round(100*byDay[bi]/tot):0)+"% of all orders). Action: schedule packing staff and stock replenishment around this day.",
+    w:"Calculated from order-line counts per weekday." });
+  /* 5. Revenue concentration in top customers */
+  var byCust={};
+  fr.forEach(function(r){ byCust[r.cid]=(byCust[r.cid]||0)+r.total; });
+  var spends=Object.keys(byCust).map(function(k){return byCust[k];}).sort(function(a,b){return b-a;});
+  var totalRev=spends.reduce(function(a,b){return a+b;},0);
+  var topN=Math.max(1,Math.floor(spends.length/10));
+  var topShare=totalRev? 100*spends.slice(0,topN).reduce(function(a,b){return a+b;},0)/totalRev : 0;
+  out.push({ t:"⭐ The top 10% of customers bring "+Math.round(topShare)+"% of revenue.",
+    d:"Just "+fmt0(topN)+" customers ("+fmt0(spends.length)+" total) generate £"+fmt0(Math.round(topShare/100*totalRev))+". Action: a simple thank-you discount or early-access offer for repeat buyers would protect most of your income.",
+    w:"Calculated from each customer's total spend in the current selection." });
+  /* 6. Average order value vs top-product price — upsell hint */
+  var orders={};
+  fr.forEach(function(r){ orders[r.inv]=(orders[r.inv]||0)+r.total; });
+  var vals=Object.keys(orders).map(function(k){return orders[k];}).sort(function(a,b){return a-b;});
+  var median = vals.length? vals[Math.floor(vals.length/2)] : 0;
+  out.push({ t:"🛍️ The typical order is £"+fmt(median)+".",
+    d:"Half of all orders are above £"+fmt(median)+" and half below. Action: bundle a small extra item just above this price to lift basket size — e.g. a '£"+(Math.round(median)+5)+"' gift set.",
+    w:"Calculated as the median order value in the current selection." });
+
+  var html="";
+  out.forEach(function(r){
+    html += "<div class='rec'><strong>"+escapeHtml(r.t)+"</strong><br>"+escapeHtml(r.d)+
+            "<div class='why'>"+escapeHtml(r.w)+"</div></div>";
+  });
+  document.getElementById('recommendations').innerHTML = html;
+}
+
+/* ===== Product search ===== */
+function searchProducts(){
+  var q = document.getElementById('prod-search').value.trim().toLowerCase();
+  var box = document.getElementById('prod-result');
+  if(q.length<2){ box.innerHTML="<p class='muted'>Type at least 2 letters.</p>"; return; }
+  var agg={};
+  rows.forEach(function(r){
+    if(r.desc.toLowerCase().indexOf(q)>=0){
+      if(!agg[r.code]) agg[r.code]={desc:r.desc,qty:0,rev:0,neg:0};
+      agg[r.code].qty+=r.qty; agg[r.code].rev+=r.total; if(r.qty<0) agg[r.code].neg++;
+    }
+  });
+  var list = Object.keys(agg).map(function(k){return agg[k];})
+    .sort(function(a,b){return b.rev-a.rev;}).slice(0,25);
+  if(!list.length){ box.innerHTML="<p class='muted'>No products found. Try another word.</p>"; return; }
+  var html="<table><tr><th>Product</th><th>Units sold</th><th>Revenue (£)</th><th>Returns</th></tr>";
+  list.forEach(function(p){
+    html+="<tr><td>"+escapeHtml(p.desc)+"</td><td>"+fmt0(p.qty)+"</td><td>£"+fmt(p.rev)+"</td><td>"+p.neg+"</td></tr>";
+  });
+  box.innerHTML = html+"</table><p class='muted'>Showing top "+list.length+" matches by revenue (all data, not just the filters).</p>";
+}
+
+/* ===== Customer view ===== */
+var spendByCust = {};
+(function(){
+  rows.forEach(function(r){ spendByCust[r.cid]=(spendByCust[r.cid]||0)+r.total; });
+  var ranked = Object.keys(spendByCust).map(function(k){return {cid:k,spend:spendByCust[k]};})
+    .sort(function(a,b){return b.spend-a.spend;});
+  var n = ranked.length;
+  var ex = document.getElementById('example-customers');
+  [ranked[0], ranked[Math.floor(n/2)], ranked[n-1]].forEach(function(c,i){
+    var labels=["🌟 Top spender","🧍 Middle customer","🛒 Smallest customer"];
+    var b=document.createElement('button');
+    b.className='btn secondary'; b.textContent=labels[i]+" (#"+c.cid+")";
+    b.onclick=function(){ document.getElementById('cust-input').value=c.cid; lookupCustomer(); };
+    ex.appendChild(b);
+  });
+  /* rank lookup map */
+  window.__custRank = {};
+  ranked.forEach(function(c,i){ window.__custRank[c.cid]=i+1; });
+  window.__custCount = n;
+})();
+
+function lookupCustomer(){
+  var cid = String(document.getElementById('cust-input').value).trim();
+  var box = document.getElementById('cust-result');
+  if(!spendByCust[cid]){ box.innerHTML="<p class='notice'>❌ No customer found with ID <strong>"+escapeHtml(cid)+"</strong>. Try one of the example buttons above.</p>"; return; }
+  var cr = rows.filter(function(r){ return String(r.cid)===cid; });
+  var invs={};
+  cr.forEach(function(r){ if(!invs[r.inv]) invs[r.inv]={d:r.d,items:0,total:0,country:r.country}; invs[r.inv].items++; invs[r.inv].total+=r.total; });
+  var invList = Object.keys(invs).map(function(k){return {inv:k,d:invs[k].d,items:invs[k].items,total:invs[k].total,country:invs[k].country};})
+    .sort(function(a,b){return b.d.localeCompare(a.d);});
+  var spend = spendByCust[cid];
+  var rank = window.__custRank[cid], n = window.__custCount;
+  var pct = 100*rank/n;
+  var band = pct<=10? "top 10% ⭐" : pct<=25? "top 25% 👍" : pct<=50? "top half 🙂" : "bottom half";
+  var byP={};
+  cr.forEach(function(r){ if(r.qty>0){ if(!byP[r.desc]) byP[r.desc]=0; byP[r.desc]+=r.qty; } });
+  var fav = Object.keys(byP).sort(function(a,b){return byP[b]-byP[a];})[0] || "—";
+  var html = "<div class='summary'><strong>Customer #"+escapeHtml(cid)+"</strong><br>"+
+    "Placed <strong>"+invList.length+" orders</strong> and spent <strong>£"+fmt(spend)+"</strong> in total.<br>"+
+    "That puts them in the <strong>"+band+"</strong> of all "+fmt0(n)+" customers (rank #"+fmt0(rank)+").<br>"+
+    "Favourite product: <strong>"+escapeHtml(fav)+"</strong>.</div>";
+  html += "<h3>All orders ("+invList.length+")</h3><div class='table-scroll'><table>"+
+    "<tr><th>Date</th><th>Invoice</th><th>Items</th><th>Total (£)</th><th>Country</th></tr>";
+  invList.forEach(function(o){
+    html+="<tr><td>"+o.d.slice(0,10)+"</td><td>"+o.inv+"</td><td>"+o.items+"</td><td>£"+fmt(o.total)+"</td><td>"+escapeHtml(o.country)+"</td></tr>";
+  });
+  html+="</table></div><p class='muted'>All customers' totals include refunds (negative lines), so the numbers are honest net spending.</p>";
+  box.innerHTML = html;
+}
+document.getElementById('cust-input').addEventListener('keydown',function(e){ if(e.key==='Enter') lookupCustomer(); });
+
+/* ===== Init ===== */
+showTab('customer');
+</script>
+</body>
+</html>

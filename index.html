@@ -65,14 +65,47 @@
     .btnrow .btn{flex:1 1 100%}
     main{padding:1rem .5rem 3rem}
   }
+  .story{border-left:5px solid var(--brand)}
+  .story .kicker{font-size:.8rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--brand);margin:0 0 .3rem}
+  .story h2{margin:.1rem 0 .8rem}
+  .story-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1rem;margin:.6rem 0}
+  .story-grid h3{margin:.2rem 0 .4rem;font-size:1rem}
+  .story-grid p{margin:0;font-size:.95rem;color:#334155}
+  .story-gap{background:#eff6ff;border-radius:10px;padding:.8rem 1rem;font-size:.95rem;margin:.8rem 0 0}
 </style>
 </head>
 <body>
 <header class="top">
   <h1>🛒 Sales Intelligence Lab</h1>
   <p>Real retail sales, explained in plain words — for customers <em>and</em> shop owners.</p>
-  <span class="snapshot">📸 data snapshot — not live</span>
+  <span class="snapshot">📸 Real shop records · Dec 2010 – Dec 2011 — a frozen copy, so the numbers never change</span>
 </header>
+
+<div style="max-width:1080px;margin:0 auto;padding:1rem .8rem 0">
+<section class="card story" aria-label="Why this exists">
+  <p class="kicker">Why this exists — read this first</p>
+  <h2>A shopkeeper's questions, answered in plain words.</h2>
+  <div class="story-grid">
+    <div>
+      <h3>🧩 The problem</h3>
+      <p>A shop owner sits on thousands of sale records but can't answer simple questions: <em>who are my best customers? what actually sells? why do orders get cancelled?</em> Big BI tools need licences, setup and technical staff — a small retailer has none of that.</p>
+    </div>
+    <div>
+      <h3>👥 Who it's for</h3>
+      <p><strong>Shop owners &amp; managers</strong> who want answers in plain words, not analyst jargon. And <strong>customers</strong> curious about their own buying story.</p>
+    </div>
+    <div>
+      <h3>🛠️ What you can do here</h3>
+      <p><strong>Customer view:</strong> type any customer ID — see their orders, total spent and favourite product, with a plain-words verdict. <strong>Owner view:</strong> revenue, orders, average order value, cancellation rate, monthly trends, top products and countries — filter everything, export CSV.</p>
+    </div>
+    <div>
+      <h3>🎁 What you walk away with</h3>
+      <p>Six recommendations <strong>computed from the actual data</strong> — not generic tips. For example: which products bring customers back, and where cancellations cluster so you can fix them.</p>
+    </div>
+  </div>
+  <p class="story-gap"><strong>Why it's different:</strong> every number here comes from <strong>40,000 real transactions of a real UK retailer</strong> (UCI Online Retail, Dec 2010 – Dec 2011). No demo numbers, no fake charts — and it speaks shopkeeper language, which Power BI never will.</p>
+</section>
+</div>
 
 <nav class="tabs" role="tablist" aria-label="Views">
   <button role="tab" id="tab-customer" aria-selected="true" aria-controls="view-customer" onclick="showTab('customer')">👤 I am a Customer</button>
@@ -181,7 +214,7 @@
         <tr><td>Full file</td><td>541,909 rows (Excel, ~45 MB)</td></tr>
         <tr><td>This site's sample</td><td><strong>40,000 rows</strong> — deterministic random sample (<code>pandas.sample(n=40000, random_state=42)</code>) from the 406,829 rows that had a customer ID; covers the full period, 3,791 customers, 37 countries</td></tr>
         <tr><td>Downloaded</td><td>2026-10-02</td></tr>
-        <tr><td>Status</td><td><span class="snapshot">📸 data snapshot — not live</span></td></tr>
+        <tr><td>Status</td><td><span class="snapshot">📸 Real shop records · Dec 2010 – Dec 2011 — a frozen copy, so the numbers never change</span></td></tr>
       </table>
       <p class="muted">Rows with missing customer IDs (guest checkouts) were excluded so customer lookups always work. Negative quantities = cancelled/returned lines, kept in the data on purpose. Money is in British pounds (£).</p>
     </div>
